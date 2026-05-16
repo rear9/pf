@@ -1,0 +1,27 @@
+.ddev/
+.vs/
+.docker/
+docker-compose.*.yml
+.ddev-image-build/
+.vendor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-*
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Uncomment if you ever use a build step
+# dist/
+# build/
+.env
+.env.local
+.env.*.local
+*.log
+*.tmp
+*.temp

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rear9 Developer Portfolio</title>
+    <link rel="icon" type="image/x-icon" href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@400,600,700&display=swap" rel="stylesheet">" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/mainstyles.css">
+</head>
+<body>
+<div id="top"></div>
+<canvas id="bubble-canvas"></canvas>
+<div class="wave-stack wave-top" aria-hidden="true">
+    <span class="wave-layer layer-1"></span>
+    <span class="wave-layer layer-2"></span>
+    <span class="wave-layer layer-3"></span>
+</div>
+<nav class="top-nav">
+    <a href="#top" class="nav-brand">
+        <img class="brand-logo" src="media/r9logo.png" alt="Logo">
+    </a>
+    <div class="nav-links">
+        <a class="nav-item" href="#about">About</a>
+        <div class="nav-dropdown">
+            <button class="nav-item nav-trigger" type="button" aria-expanded="false">Projects</button>
+            <div class="dropdown-menu compact">
+                <a href="#team-projects">Team</a>
+                <a href="#personal-projects">Personal</a>
+            </div>
+        </div>
+        <div class="nav-dropdown">
+            <button class="nav-item nav-trigger" type="button" aria-expanded="false">Disciplines</button>
+            <div class="dropdown-menu compact">
+                <a>Programmer</a>
+                <a>Designer</a>
+                <a>Composer</a>
+            </div>
+        </div>
+        <div class="nav-dropdown">
+            <button class="nav-item nav-trigger" type="button" aria-expanded="false">Contact</button>
+            <div class="dropdown-menu">
+                <div class="copy-item">
+                    <span>Email: </span>
+                    <button class="copy-btn" data-copy="aprexbiz@gmail.com">aprexbiz@gmail.com</button>
+                </div>
+                <div class="copy-item">
+                    <span>Discord: </span>
+                    <button class="copy-btn" data-copy="rokas">rokas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+<div class="bg-gradient"></div>
+<main class="container">
+    <section class="hero">
+        <img class="keyboard-icon" src="media/keyboardicon.png" alt="Keyboard icon">
+        <h1>Rokas Norkus</h1>
+        <p class="hero-subtitle">Programmer · Game Designer · Composer</p>
+        <a class="contact-link" href="https://rear9.itch.io/" target="_blank" rel="noopener noreferrer" aria-label="Visit Itch profile">
+            <span class="contact-circle"><img class="contact-image" src="media/socials/itchicon.png" alt="Itch.io"></span>
+        </a>
+        <a class="contact-link" href="https://github.com/rear9" target="_blank" rel="noopener noreferrer" aria-label="Visit GitHub profile">
+            <span class="contact-circle"><img class="contact-image" src="media/socials/githublogo.png" alt="GitHub"></span>
+        </a>
+        <a class="contact-link" href="https://bsky.app/profile/rear9.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Visit bsky profile">
+            <span class="contact-circle"><img class="contact-image" style="width: 2rem; height: 2rem;" src="media/socials/bskylogo.png" alt="GitHub"></span>
+        </a>
+    </section>
+
+    <div class="section-divider" aria-hidden="true"></div>
+
+    <section id="about" class="panel">
+        <h2>About Me</h2>
+        <p>
+            Born in Lithuania, based in the UK. Studying Game Design & Production at Abertay University.<br>
+            I've been building things for 5+ years now, from systems / gameplay programming to UI/UX or composing original soundtracks.<br>
+            I care a lot about how games feel, both mechanically and sonically.<br>
+            Outside of projects I play chess, make music, and lose hours to random indie games.
+        </p>
+    </section>
+
+    <div class="section-divider" aria-hidden="true"></div>
+
+    <section id="team-projects" class="panel">
+        <h1>Team Projects</h1>
+        <div class="portfolio-grid">
+            <a class="project-card">
+                <div class="project-media full">
+                    <img src="media/CitruSpire/citrusthumb.png" alt="CitruSpire thumbnail">
+                </div>
+                <h2>CitruSpire (2025)</h2>
+                <ul class="meta-list">
+                    <li><strong>Job title:</strong> Gameplay Programmer & Composer</li>
+                    <li><strong>Contributions:</strong> Combat logic, Dash movement, 2D parallax scrolling, level OSTs</li>
+                </ul>
+                <div class="expand-hint">…</div>
+                <div class="meta-expand">
+                    <ul class="meta-list extra-meta">
+                        <li><strong>Group:</strong> Laser Lemons</li>
+                        <li><strong>Platforms:</strong> PC</li>
+                        <li><strong>Team size:</strong> 7</li>
+                        <li><strong>Project length:</strong> 3 months</li>
+                        <li><strong>Engine and tools:</strong> Unreal Engine 5, Blueprint, C++</li>
+                        <li><strong>Genre:</strong> 2.5D Platformer</li>
+                    </ul>
+                </div>
+            </a>
+
+            <a class="project-card">
+                <div class="project-media full">
+                    <img src="media/BPM/BPMthumb.png" alt="BeatPunkMania thumbnail">
+                </div>
+                <h2>Beat Punk Mania (2026)</h2>
+                <ul class="meta-list">
+                    <li><strong>Job title:</strong> Systems Programmer & Build Engineer</li>
+                    <li><strong>Contributions:</strong> Game flow, UI/UX, core systems, build maintenance</li>
+                </ul>
+                <div class="expand-hint">…</div>
+                <div class="meta-expand">
+                    <ul class="meta-list extra-meta">
+                        <li><strong>Group:</strong> Little Isopod</li>
+                        <li><strong>Publisher:</strong> Dlala Studios</li>
+                        <li><strong>Platforms:</strong> PC</li>
+                        <li><strong>Team size:</strong> 7</li>
+                        <li><strong>Project length:</strong> 3 months</li>
+                        <li><strong>Engine and tools:</strong> Unity, Perforce, Jira</li>
+                        <li><strong>Genre:</strong> 2.5D Couchplay Rhythm</li>
+                    </ul>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <div class="section-divider" aria-hidden="true"></div>
+
+    <section id="personal-projects" class="panel">
+        <h1>Personal Projects</h1>
+        <div class="portfolio-grid">
+            <a class="project-card">
+                <div class="project-media landscape">
+                    <img src="media/Overlimit/9O4CDv.png" alt="Overlimit logo">
+                </div>
+                <h2>Overlimit (2023)</h2>
+                <p class="desctext">Solo project that is for now abandoned due to development hell;</p><p>Focused on quick traversal, full slow-motion toggle, along with parkour wall-running movement.</p>
+            </a>
+
+            <a class="project-card">
+                <div class="project-media full">
+                    <img src="media/ParryDodge/n7laO5.png" alt="ParryDodge banner">
+                </div>
+                <h2>ParryDodge (2025)</h2>
+                <p class="desctext">Bullet-hell system sandbox, development on hiatus from burnout;</p><p>Features a wave system, parrying, dodging and a variety of attacks varying in difficulty.</p>
+            </a>
+            <a class="project-card">
+                <div class="project-media full">
+                    <img src="media/OpenDrive/nobgterrainOD.png" alt="OpenDrive terrain image">
+                </div>
+                <h2>Open-Drive (2026)</h2>
+                <p class="desctext">Complete open-world terrain generation simulation;</p><p>Features LOD, infinite procedural chunk & biome generation with performance-oriented systems.</p>
+            </a>
+            <a class="project-card">
+                <div class="project-media full">
+                    <img src="media/VoiceChess/vcbanner.png" alt="VoiceChess banner image">
+                </div>
+                <h2>Voice Chess (2026)</h2>
+                <p class="desctext"> Singleplayer Chess prototype in the bug-fixing stage;</p><p>Features live speech recognition, engine play of varying levels, mobile-friendly UI, and blindfold simulation.</p>
+            </a>
+        </div>
+    </section>
+
+    <div class="wave-stack wave-bottom" aria-hidden="true">
+        <span class="wave-layer layer-1"></span>
+        <span class="wave-layer layer-2"></span>
+        <span class="wave-layer layer-3"></span>
+    </div>
+</main>
+<script src="js/script.js"></script>
+</body>
+</html>
