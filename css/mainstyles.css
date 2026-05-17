@@ -91,6 +91,7 @@ body::after {
     z-index: 50;
     max-width: 800px;
     margin: 0 auto;
+    margin-top: -22px;
     padding: 1rem 1.25rem;
     display: grid;
     grid-template-columns: 1fr auto 1fr;
