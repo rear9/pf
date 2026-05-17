@@ -1,11 +1,56 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const prefersReducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const MOTION_FPS = 30;
+    const MOTION_FRAME_INTERVAL = 1000 / MOTION_FPS;
+    const RIPPLE_COOLDOWN = 250;
+
+    function prefersReducedMotion() {
+        return prefersReducedMotionQuery.matches;
+    }
+
+    function injectMotionCSS() {
+        const style = document.createElement("style");
+        style.textContent = `
+            .wave-layer::before{
+                animation-play-state:var(--wave-play-state,running);
+            }
+
+            .motion-paused .wave-layer::before,
+            .motion-reduced .wave-layer::before{
+                animation-play-state:paused!important;
+            }
+
+            .motion-reduced #bubble-canvas{
+                display:none!important;
+            }
+
+            .motion-reduced .ripple-card,
+            .motion-reduced .ripple-bg,
+            .motion-reduced .ripple{
+                display:none!important;
+                animation:none!important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function applyMotionPreference() {
+        document.documentElement.classList.toggle("motion-reduced", prefersReducedMotion());
+    }
+
+    injectMotionCSS();
+    applyMotionPreference();
+
+    if (typeof prefersReducedMotionQuery.addEventListener === "function") {
+        prefersReducedMotionQuery.addEventListener("change", applyMotionPreference);
+    } else if (typeof prefersReducedMotionQuery.addListener === "function") {
+        prefersReducedMotionQuery.addListener(applyMotionPreference);
+    }
 
     const sectionLinks = document.querySelectorAll('a[href^="#"]');
     const navDropdowns = document.querySelectorAll(".nav-dropdown");
     const navTriggers = document.querySelectorAll(".nav-trigger");
-    const subTriggers = document.querySelectorAll(".dropdown-subtrigger");
-    let lastSpawnTime = 0;
-    
+
     sectionLinks.forEach((link) => {
         link.addEventListener("click", (event) => {
             const targetId = link.getAttribute("href");
@@ -15,19 +60,26 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!target) return;
 
             event.preventDefault();
-            target.scrollIntoView({ behavior: "smooth", block: "start" });
+
+            target.scrollIntoView({
+                behavior: prefersReducedMotion() ? "auto" : "smooth",
+                block: "start"
+            });
         });
     });
 
     navTriggers.forEach((trigger) => {
         trigger.addEventListener("click", () => {
             const dropdown = trigger.closest(".nav-dropdown");
+            if (!dropdown) return;
+
             const isOpen = dropdown.classList.contains("open");
 
             navDropdowns.forEach((item) => {
                 item.classList.remove("open");
-                const t = item.querySelector(".nav-trigger");
-                if (t) t.setAttribute("aria-expanded", "false");
+
+                const itemTrigger = item.querySelector(".nav-trigger");
+                if (itemTrigger) itemTrigger.setAttribute("aria-expanded", "false");
             });
 
             if (!isOpen) {
@@ -36,198 +88,326 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
-    
+
     document.addEventListener("click", (event) => {
-        if (!event.target.closest(".nav-dropdown")) {
-            navDropdowns.forEach((item) => {
-                item.classList.remove("open");
-                const trigger = item.querySelector(".nav-trigger");
-                if (trigger) trigger.setAttribute("aria-expanded", "false");
-                item.querySelectorAll(".dropdown-submenu").forEach((sub) => {
-                    sub.classList.remove("open");
-                    const subTrigger = sub.querySelector(".dropdown-subtrigger");
-                    if (subTrigger) subTrigger.setAttribute("aria-expanded", "false");
-                });
+        if (event.target.closest(".nav-dropdown")) return;
+
+        navDropdowns.forEach((item) => {
+            item.classList.remove("open");
+
+            const trigger = item.querySelector(".nav-trigger");
+            if (trigger) trigger.setAttribute("aria-expanded", "false");
+
+            item.querySelectorAll(".dropdown-submenu").forEach((sub) => {
+                sub.classList.remove("open");
+
+                const subTrigger = sub.querySelector(".dropdown-subtrigger");
+                if (subTrigger) subTrigger.setAttribute("aria-expanded", "false");
             });
-        }
+        });
     });
 
-    const copyButtons = document.querySelectorAll('.copy-btn');
+    const copyButtons = document.querySelectorAll(".copy-btn");
 
-    copyButtons.forEach((button, index) => {
-        button.addEventListener('click', async (e) => {
-            const textToCopy = button.getAttribute('data-copy');
+    copyButtons.forEach((button) => {
+        button.addEventListener("click", async () => {
+            const textToCopy = button.getAttribute("data-copy");
             const originalText = button.textContent;
-            button.classList.add('copied');
-            button.textContent = 'Copied!';
+
+            button.classList.add("copied");
+            button.textContent = "Copied!";
+
             try {
                 await navigator.clipboard.writeText(textToCopy);
             } catch (err) {
                 try {
-                    const textarea = document.createElement('textarea');
+                    const textarea = document.createElement("textarea");
                     textarea.value = textToCopy;
-                    textarea.style.position = 'fixed';
-                    textarea.style.opacity = '0';
+                    textarea.style.position = "fixed";
+                    textarea.style.opacity = "0";
                     document.body.appendChild(textarea);
                     textarea.select();
-                    document.execCommand('copy');
+                    document.execCommand("copy");
                     document.body.removeChild(textarea);
                 } catch (fallbackErr) {
-                    console.error('Failed to copy: ', fallbackErr);
-                    button.textContent = 'Error';
+                    console.error("Failed to copy:", fallbackErr);
+
+                    button.textContent = "Error";
+
                     setTimeout(() => {
-                        button.classList.remove('copied');
+                        button.classList.remove("copied");
                         button.textContent = originalText;
                     }, 1500);
+
                     return;
                 }
             }
 
             setTimeout(() => {
-                button.classList.remove('copied');
+                button.classList.remove("copied");
                 button.textContent = originalText;
             }, 1500);
         });
     });
 
-    // ---------- 3D Tilt for About Me card ----------
-    const aboutCard = document.getElementById('about');
-    if (aboutCard) {
-        // Glare CSS custom properties
-        aboutCard.style.setProperty('--glare-x', '50%');
-        aboutCard.style.setProperty('--glare-y', '50%');
+    // ---------- Wave throttling / pausing ----------
+    const waveStacks = document.querySelectorAll(".wave-stack");
 
-        const maxTilt = 3; // degrees
+    function configureWaves() {
+        if (!waveStacks.length) return;
 
-        function handleMouseMove(e) {
+        document.querySelectorAll(".layer-1").forEach((layer) => {
+            layer.style.setProperty("--drift-duration", "48s");
+        });
+
+        document.querySelectorAll(".layer-2").forEach((layer) => {
+            layer.style.setProperty("--drift-duration", "72s");
+        });
+
+        document.querySelectorAll(".layer-3").forEach((layer) => {
+            layer.style.setProperty("--drift-duration", "108s");
+        });
+
+        if ("IntersectionObserver" in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    entry.target.classList.toggle("motion-paused", !entry.isIntersecting);
+                });
+            }, {
+                root: null,
+                threshold: 0
+            });
+
+            waveStacks.forEach((stack) => observer.observe(stack));
+        }
+    }
+
+    configureWaves();
+
+    function updateGlobalMotionState() {
+        const shouldPause = document.hidden || prefersReducedMotion();
+        document.documentElement.classList.toggle("motion-paused", shouldPause);
+    }
+
+    document.addEventListener("visibilitychange", updateGlobalMotionState);
+    updateGlobalMotionState();
+
+    // ---------- 3D Tilt for About Me card, throttled to 30 FPS ----------
+    const aboutCard = document.getElementById("about");
+
+    if (aboutCard && !prefersReducedMotion()) {
+        aboutCard.style.setProperty("--glare-x", "50%");
+        aboutCard.style.setProperty("--glare-y", "50%");
+
+        const maxTilt = 3;
+        let latestMouseEvent = null;
+        let tiltFrameId = null;
+        let lastTiltFrameTime = 0;
+
+        function updateTilt(timestamp) {
+            tiltFrameId = requestAnimationFrame(updateTilt);
+
+            if (!latestMouseEvent) return;
+            if (timestamp - lastTiltFrameTime < MOTION_FRAME_INTERVAL) return;
+
+            lastTiltFrameTime = timestamp;
+
             const rect = aboutCard.getBoundingClientRect();
-            const x = e.clientX - rect.left;   // mouse X relative to card
-            const y = e.clientY - rect.top;    // mouse Y relative to card
+            const x = latestMouseEvent.clientX - rect.left;
+            const y = latestMouseEvent.clientY - rect.top;
 
-            // Convert to percentage of card size
-            const xPercent = (x / rect.width);
-            const yPercent = (y / rect.height);
+            const xPercent = x / rect.width;
+            const yPercent = y / rect.height;
 
-            // Map to rotation: -maxTilt to +maxTilt
-            // rotateY: horizontal mouse movement → horizontal rotation
-            // rotateX: vertical mouse movement → vertical rotation (negative so moving up tilts back)
             const rotateY = (xPercent - 0.5) * maxTilt;
             const rotateX = (0.5 - yPercent) * maxTilt;
 
-            // Apply transform – remove transition during mousemove for responsiveness
-            aboutCard.style.transition = 'none';
+            aboutCard.style.transition = "none";
             aboutCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            aboutCard.style.setProperty("--glare-x", `${xPercent * 100}%`);
+            aboutCard.style.setProperty("--glare-y", `${yPercent * 100}%`);
+        }
 
-            // Update glare position (in % from top-left)
-            aboutCard.style.setProperty('--glare-x', `${xPercent * 100}%`);
-            aboutCard.style.setProperty('--glare-y', `${yPercent * 100}%`);
+        function startTiltLoop() {
+            if (!tiltFrameId) {
+                lastTiltFrameTime = 0;
+                tiltFrameId = requestAnimationFrame(updateTilt);
+            }
+        }
+
+        function stopTiltLoop() {
+            if (tiltFrameId) {
+                cancelAnimationFrame(tiltFrameId);
+                tiltFrameId = null;
+            }
         }
 
         function resetCard() {
-            aboutCard.style.transition = 'transform 0.5s ease-out';
-            aboutCard.style.transform = 'rotateX(0deg) rotateY(0deg)';
-            // Reset glare to center
-            aboutCard.style.setProperty('--glare-x', '50%');
-            aboutCard.style.setProperty('--glare-y', '50%');
+            latestMouseEvent = null;
+            stopTiltLoop();
+
+            aboutCard.style.transition = "transform 0.5s ease-out";
+            aboutCard.style.transform = "rotateX(0deg) rotateY(0deg)";
+            aboutCard.style.setProperty("--glare-x", "50%");
+            aboutCard.style.setProperty("--glare-y", "50%");
         }
 
-        aboutCard.addEventListener('mousemove', handleMouseMove);
-        aboutCard.addEventListener('mouseleave', resetCard);
-    }
-    // ---------- Ripple effect on click for About Me card ----------
-    if (aboutCard) {
-        aboutCard.addEventListener('click', function(e) {
-            e.stopPropagation();   // ← prevent body from also firing
+        aboutCard.addEventListener("mousemove", (event) => {
+            latestMouseEvent = event;
+            startTiltLoop();
+        });
 
+        aboutCard.addEventListener("mouseleave", resetCard);
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) resetCard();
+        });
+    }
+
+    // ---------- Ripple effects, rate-limited ----------
+    let lastCardRippleTime = 0;
+    let lastBodyRippleTime = 0;
+
+    function createRipple(parent, className, x, y) {
+        if (prefersReducedMotion() || document.hidden) return;
+
+        const ripple = document.createElement("span");
+        ripple.className = className;
+        ripple.style.left = `${x}px`;
+        ripple.style.top = `${y}px`;
+
+        parent.appendChild(ripple);
+
+        ripple.addEventListener("animationend", () => {
+            ripple.remove();
+        }, {
+            once: true
+        });
+    }
+
+    if (aboutCard) {
+        aboutCard.addEventListener("click", (event) => {
+            event.stopPropagation();
+
+            if (prefersReducedMotion()) return;
             if (window.getSelection().toString().length > 0) return;
 
-            const rect = aboutCard.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top - 5;
-            const ripple = document.createElement('span');
-            ripple.className = 'ripple-card';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            aboutCard.appendChild(ripple);
+            const now = performance.now();
+            if (now - lastCardRippleTime < RIPPLE_COOLDOWN) return;
 
-            ripple.addEventListener('animationend', () => {
-                ripple.remove();
-            });
+            lastCardRippleTime = now;
+
+            const rect = aboutCard.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top - 5;
+
+            createRipple(aboutCard, "ripple-card", x, y);
         });
     }
 
-    document.body.addEventListener('click', function(e) {
-        const ripple = document.createElement('span');
-        ripple.className = 'ripple-bg';
-        ripple.style.left = e.pageX + 'px';   // document‑relative horizontal
-        ripple.style.top = e.pageY + 'px';    // document‑relative vertical
-        document.body.appendChild(ripple);    // attach to the scrollable body
+    document.body.addEventListener("click", (event) => {
+        if (prefersReducedMotion()) return;
 
-        ripple.addEventListener('animationend', () => {
-            ripple.remove();
-        });
+        const now = performance.now();
+        if (now - lastBodyRippleTime < RIPPLE_COOLDOWN) return;
+
+        lastBodyRippleTime = now;
+
+        createRipple(document.body, "ripple-bg", event.pageX, event.pageY);
     });
 
-    // ---------- Rising bubbles (viewport‑fixed canvas, document‑relative bubbles) ----------
-    const canvas = document.getElementById('bubble-canvas');
-    if (canvas) {
-        const ctx = canvas.getContext('2d');
+    // ---------- Rising bubbles, throttled to 30 FPS ----------
+    const canvas = document.getElementById("bubble-canvas");
 
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+    if (canvas && !prefersReducedMotion()) {
+        const ctx = canvas.getContext("2d", {
+            alpha: true
+        });
 
         const bubbles = [];
-        const MAX_BUBBLES = 80;
+        const MAX_BUBBLES = 30;
         const BASE_SPEED = 0.3;
-        const SPAWN_INTERVAL = 500; // ms
+        const SPAWN_INTERVAL = 650;
+        const TARGET_FPS = 30;
+        const FRAME_INTERVAL = 1000 / TARGET_FPS;
+
+        let animationId = null;
+        let lastFrameTime = 0;
+        let lastSpawnTime = 0;
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
+            canvas.width = Math.floor(window.innerWidth * dpr);
+            canvas.height = Math.floor(window.innerHeight * dpr);
+            canvas.style.width = `${window.innerWidth}px`;
+            canvas.style.height = `${window.innerHeight}px`;
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
 
         function createBubble() {
-            // spawn below the current document bottom
             const docBottom = document.body.scrollHeight;
+
             return {
-                x: Math.random() * canvas.width,
-                y: docBottom + Math.random() * 60,          // document‑relative
-                radius: Math.random() * 14 + 6,
-                speed: BASE_SPEED + Math.random() * 0.5,
-                opacity: Math.random() * 0.25 + 0.05,
+                x: Math.random() * window.innerWidth,
+                y: docBottom + Math.random() * 60,
+                radius: Math.random() * 12 + 5,
+                speed: BASE_SPEED + Math.random() * 0.45,
+                opacity: Math.random() * 0.2 + 0.04
             };
         }
 
         function updateBubbles() {
             for (let i = bubbles.length - 1; i >= 0; i--) {
-                const b = bubbles[i];
-                b.y -= b.speed;
-                // Remove when totally above the document (or when the bubble is off‑screen)
-                if (b.y + b.radius < 0) {
+                const bubble = bubbles[i];
+
+                bubble.y -= bubble.speed;
+
+                if (bubble.y + bubble.radius < 0) {
                     bubbles.splice(i, 1);
                 }
             }
         }
 
         function drawBubbles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
             const scrollY = window.scrollY;
-            for (const b of bubbles) {
-                const viewportY = b.y - scrollY;
-                // Only draw if visible in the viewport
-                if (viewportY + b.radius < 0 || viewportY - b.radius > canvas.height) continue;
+
+            for (const bubble of bubbles) {
+                const viewportY = bubble.y - scrollY;
+
+                if (viewportY + bubble.radius < 0 || viewportY - bubble.radius > window.innerHeight) {
+                    continue;
+                }
+
                 ctx.beginPath();
-                ctx.arc(b.x, viewportY, b.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${b.opacity})`;
+                ctx.arc(bubble.x, viewportY, bubble.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${bubble.opacity})`;
                 ctx.fill();
-                ctx.strokeStyle = `rgba(255, 255, 255, ${b.opacity * 0.6})`;
+                ctx.strokeStyle = `rgba(255,255,255,${bubble.opacity * 0.6})`;
                 ctx.lineWidth = 1;
                 ctx.stroke();
             }
         }
 
-        let lastSpawnTime = 0;
         function animate(timestamp) {
-            if (!lastSpawnTime) lastSpawnTime = timestamp;
+            animationId = requestAnimationFrame(animate);
+
+            if (document.hidden || prefersReducedMotion()) {
+                return;
+            }
+
+            if (timestamp - lastFrameTime < FRAME_INTERVAL) {
+                return;
+            }
+
+            lastFrameTime = timestamp;
+
+            if (!lastSpawnTime) {
+                lastSpawnTime = timestamp;
+            }
 
             if (timestamp - lastSpawnTime >= SPAWN_INTERVAL && bubbles.length < MAX_BUBBLES) {
                 bubbles.push(createBubble());
@@ -236,10 +416,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
             updateBubbles();
             drawBubbles();
-            requestAnimationFrame(animate);
         }
 
-        requestAnimationFrame(animate);
+        function startAnimation() {
+            if (!animationId && !prefersReducedMotion()) {
+                lastFrameTime = 0;
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+
+        let resizeTimeout = null;
+
+        window.addEventListener("resize", () => {
+            clearTimeout(resizeTimeout);
+
+            resizeTimeout = setTimeout(() => {
+                resize();
+            }, 150);
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        });
+
+        if (typeof prefersReducedMotionQuery.addEventListener === "function") {
+            prefersReducedMotionQuery.addEventListener("change", () => {
+                if (prefersReducedMotion()) {
+                    stopAnimation();
+                    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                } else {
+                    startAnimation();
+                }
+            });
+        }
+
+        resize();
+        startAnimation();
     }
-    
 });
