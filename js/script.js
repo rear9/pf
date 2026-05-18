@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     const prefersReducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const MOTION_FPS = 30;
+    const MOTION_FPS = 24;
     const MOTION_FRAME_INTERVAL = 1000 / MOTION_FPS;
-    const RIPPLE_COOLDOWN = 250;
+    const RIPPLE_COOLDOWN = 50;
 
     function prefersReducedMotion() {
         return prefersReducedMotionQuery.matches;
@@ -43,8 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (typeof prefersReducedMotionQuery.addEventListener === "function") {
         prefersReducedMotionQuery.addEventListener("change", applyMotionPreference);
-    } else if (typeof prefersReducedMotionQuery.addListener === "function") {
-        prefersReducedMotionQuery.addListener(applyMotionPreference);
+    } else if (typeof prefersReducedMotionQuery.addEventListener === "function") {
+        prefersReducedMotionQuery.addEventListener(applyMotionPreference);
     }
 
     const sectionLinks = document.querySelectorAll('a[href^="#"]');
@@ -191,8 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("visibilitychange", updateGlobalMotionState);
     updateGlobalMotionState();
-
-    // ---------- 3D Tilt for About Me card, throttled to 30 FPS ----------
+    
     const aboutCard = document.getElementById("about");
 
     if (aboutCard && !prefersReducedMotion()) {
@@ -246,10 +245,14 @@ document.addEventListener("DOMContentLoaded", () => {
             latestMouseEvent = null;
             stopTiltLoop();
 
-            aboutCard.style.transition = "transform 0.5s ease-out";
+            aboutCard.style.transition = "transform 120ms linear";
             aboutCard.style.transform = "rotateX(0deg) rotateY(0deg)";
             aboutCard.style.setProperty("--glare-x", "50%");
             aboutCard.style.setProperty("--glare-y", "50%");
+
+            window.setTimeout(() => {
+                aboutCard.style.transition = "none";
+            }, 140);
         }
 
         aboutCard.addEventListener("mousemove", (event) => {
@@ -297,9 +300,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             lastCardRippleTime = now;
 
-            const rect = aboutCard.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top - 5;
+            const x = event.offsetX;
+            const y = event.offsetY;
 
             createRipple(aboutCard, "ripple-card", x, y);
         });
@@ -315,8 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         createRipple(document.body, "ripple-bg", event.pageX, event.pageY);
     });
-
-    // ---------- Rising bubbles, throttled to 30 FPS ----------
+    
     const canvas = document.getElementById("bubble-canvas");
 
     if (canvas && !prefersReducedMotion()) {
@@ -328,7 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const MAX_BUBBLES = 30;
         const BASE_SPEED = 0.3;
         const SPAWN_INTERVAL = 650;
-        const TARGET_FPS = 30;
+        const TARGET_FPS = 24;
         const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
         let animationId = null;
