@@ -459,14 +459,14 @@ body::after {
 }
 
 .layer-1 {
-    --drift-duration: 16s;
+    --drift-duration: 32s;
     --drift-distance: 650px;
     --wave-double: url("../svg/wave1.svg");
     opacity: 0.88;
 }
 
 .layer-2 {
-    --drift-duration: 24s;
+    --drift-duration: 48s;
     --drift-distance: 900px;
     --wave-double: url("../svg/wave2.svg");
     animation-delay: -9.5s;
@@ -474,7 +474,7 @@ body::after {
 }
 
 .layer-3 {
-    --drift-duration: 36s;
+    --drift-duration: 72s;
     --drift-distance: 1200px;
     --wave-double: url("../svg/wave3.svg");
     animation-delay: -39s;
@@ -661,6 +661,13 @@ body::after {
     height: 1.75rem;
     object-fit: contain;
     display: block;
+}
+
+@media (max-width: 900px), (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .wave-layer::before {
+        animation: none !important;
+        will-change: auto !important;
+    }
 }
 
 @media (max-width: 640px) {
