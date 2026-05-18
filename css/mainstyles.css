@@ -499,7 +499,7 @@ body::after {
     border: 1px solid #3a3a3a;
     border-radius: 14px;
     overflow: hidden;
-    padding-bottom: 4rem;
+    padding-bottom: 1rem;
     transition: border-color 330ms ease-in-out, transform 330ms ease-in-out, box-shadow 330ms ease-in-out;
 }
 
