@@ -108,7 +108,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const copyButtons = document.querySelectorAll(".copy-btn");
-
+    const emailBtn = document.getElementById("email-copy-btn");
+    if (emailBtn) {
+        const e = "aprexbiz" + "\u0040" + "gmail.com";
+        emailBtn.setAttribute("data-copy", e);
+        emailBtn.textContent = e;
+    }
+    
     copyButtons.forEach((button) => {
         button.addEventListener("click", async () => {
             const textToCopy = button.getAttribute("data-copy");
